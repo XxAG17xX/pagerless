@@ -9,3 +9,15 @@ groups:
           severity: page
         annotations:
           summary: "Checkout is failing for customers"
+
+      - alert: CheckoutNoOrders
+        # CheckoutFailing counts failed orders, so it goes quiet if checkout stops reporting
+        # orders at all (seen 2026-09-30 when killing payment cascaded). The load generator
+        # always orders, so zero orders for 5 minutes means checkout is broken.
+        # "or vector(0)" makes a missing series count as zero instead of as no data.
+        expr: (sum(rate(traces_span_metrics_calls_total{service_name="checkout", span_name="oteldemo.CheckoutService/PlaceOrder"}[5m])) or vector(0)) == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Checkout has recorded no orders for 5 minutes"
