@@ -1,0 +1,7 @@
+# Pagerless's own layer, loaded last by dc.sh (ADR 0002).
+# Relative paths resolve from shop/, the folder of the first compose file, hence the ../
+services:
+  prometheus:
+    volumes:
+      - ../prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
+      - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml

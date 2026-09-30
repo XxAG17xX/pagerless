@@ -1,0 +1,11 @@
+groups:
+  - name: pagerless
+    rules:
+      - alert: CheckoutFailing
+        # Share of PlaceOrder calls that errored over the last 5 minutes, above 20%.
+        expr: sum(rate(traces_span_metrics_calls_total{service_name="checkout", span_name="oteldemo.CheckoutService/PlaceOrder", status_code="STATUS_CODE_ERROR"}[5m])) / sum(rate(traces_span_metrics_calls_total{service_name="checkout", span_name="oteldemo.CheckoutService/PlaceOrder"}[5m])) > 0.2
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Checkout is failing for customers"
