@@ -9,3 +9,4 @@ docs/adr/0003-thin-slice-first.md
 .claude/
 skills-lock.json
 .vscode/
+runs/
