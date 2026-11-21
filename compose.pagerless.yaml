@@ -5,3 +5,14 @@ services:
     volumes:
       - ../prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
       - ../prometheus/alerts.yml:/etc/prometheus/alerts.yml
+  # Our copy of the Shop's flag file, so faults/inject.py can flip flags without editing shop/.
+  # Same target folder as the Shop's mount, so compose replaces it. flagd polls the file.
+  flagd:
+    volumes:
+      - ../flagd:/etc/flagd
+  flagd-ui:
+    volumes:
+      - ../flagd:/app/data
+  opensearch:
+    ports:
+      - "9200:9200"  # fixed host port so mcp_servers/logs_mcp.py can find it (the Shop maps a random one)
