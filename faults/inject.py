@@ -125,7 +125,7 @@ def run_agent(run_dir: Path, truth: dict, repeats: int) -> None:
                          **{k: out.get(k) for k in ("seconds", "tool_calls", "cost_usd")}})
         print(f"attempt {i}: {answer or out['report']} ({'right' if attempts[-1]['correct'] else 'wrong'})")
     score = {"fault": truth["fault"], "truth": truth["root_cause_service"], "attempts": attempts,
-             "pass_all": all(a["correct"] for a in attempts)}
+             "pass_all": all(a["correct"] for a in attempts), "baseline": truth.get("baseline")}
     (run_dir / "score.json").write_text(json.dumps(score, indent=2))
 
 
@@ -148,6 +148,12 @@ def main(name: str, agent: bool, repeats: int) -> None:
         truth["alerts"] = firing_alerts() if fired else []
         truth["seconds_to_alert"] = round(time.monotonic() - start) if fired else None
         print(f"alert: {truth['alerts'] or 'none within timeout'} after {truth['seconds_to_alert']} s")
+        if fired:  # the no-AI runbook answers at the same moment the agent starts
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from baseline import diagnose
+            b = diagnose()
+            truth["baseline"] = {**b, "correct": b["root_cause_service"] == fault["root_cause_service"]}
+            print(f"baseline: {b['root_cause_service'] or 'none'} ({b['rule']})")
         if agent and fired:
             run_agent(run_dir, truth, repeats)
     finally:  # fix the Shop even if the agent crashes or the run is interrupted
