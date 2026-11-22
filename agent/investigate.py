@@ -21,6 +21,9 @@ MAX_STEPS = 15  # ponytail: hard step cap; a task budget is the upgrade if runs 
 PRICES = {"claude-sonnet-5-5": (2.00, 10.00, 0.10), "claude-haiku-5-5": (0.10, 0.50, 0.01),
           "claude-opus-5-5": (4.00, 20.00, 0.20)}  # $ per 1M tokens: input, output, cache read
 SERVERS = ["mcp_servers/prometheus_mcp.py", "mcp_servers/jaeger_mcp.py", "mcp_servers/logs_mcp.py"]
+# Code mode (programmatic tool calling): the model writes a script that calls the tools inside
+# Anthropic's code-execution sandbox, and only the script's output comes back into its context.
+CODE_MODE = os.environ.get("PAGERLESS_CODE_MODE") == "1"
 if os.environ.get("PAGERLESS_MEMORY") == "1":  # incident memory (RAG) is opt-in, so its effect can be measured
     SERVERS.append("mcp_servers/memory_mcp.py")
 
@@ -64,15 +67,24 @@ async def investigate(run_dir: Path) -> dict:
         for s in sessions:
             for t in (await s.list_tools()).tools:
                 owner[t.name] = s
-                tools.append({"name": t.name, "description": t.description, "input_schema": t.input_schema})
+                tools.append({"name": t.name, "description": t.description, "input_schema": t.input_schema,
+                              **({"allowed_callers": ["code_execution_20260120"]} if CODE_MODE else {})})
+        if CODE_MODE:
+            tools.append({"type": "code_execution_20260120", "name": "code_execution"})
 
+        container = None  # code mode: the sandbox must be named again while its tool calls are pending
         messages = [{"role": "user", "content": "An alert fired. Investigate and report the root cause."}]
-        for _ in range(MAX_STEPS):
+        # In code mode every tool call made by the script is its own API round trip (the sandbox pauses
+        # while we run the tool), so the cap counts requests, not model decisions. ponytail: flat 4x.
+        for _ in range(MAX_STEPS * (4 if CODE_MODE else 1)):
             response = await client.messages.create(
                 model=MODEL, max_tokens=16000, system=SYSTEM, tools=tools, messages=messages,
                 cache_control={"type": "ephemeral"},  # tools + system + history are re-sent each step
                 output_config={"format": {"type": "json_schema", "schema": REPORT_SCHEMA}},
+                **({"container": container} if container else {}),
             )
+            if getattr(response, "container", None):
+                container = response.container.id
             u = response.usage
             usage["input"] += u.input_tokens
             usage["output"] += u.output_tokens
@@ -80,6 +92,8 @@ async def investigate(run_dir: Path) -> dict:
             usage["cache_write"] += u.cache_creation_input_tokens or 0
             messages.append({"role": "assistant", "content": response.content})
 
+            if response.stop_reason == "pause_turn":  # the sandbox paused a long turn; send it back to continue
+                continue
             calls = [b for b in response.content if b.type == "tool_use"]
             if response.stop_reason != "tool_use" or not calls:
                 text = next((b.text for b in response.content if b.type == "text"), "{}")
@@ -89,16 +103,17 @@ async def investigate(run_dir: Path) -> dict:
             for call in calls:
                 res = await owner[call.name].call_tool(call.name, call.input)
                 out = res.content[0].text if res.content else ""
-                steps.append({"tool": call.name, "input": call.input, "is_error": res.is_error, "output": out[:2000]})
+                steps.append({"tool": call.name, "input": call.input, "is_error": res.is_error, "output": out[:2000],
+                              "from_code": getattr(getattr(call, "caller", None), "type", "direct") != "direct"})
                 results.append({"type": "tool_result", "tool_use_id": call.id, "content": out, "is_error": bool(res.is_error)})
             messages.append({"role": "user", "content": results})
         else:
-            report = {"error": f"step cap of {MAX_STEPS} reached"}
+            report = {"error": f"request cap of {MAX_STEPS * (4 if CODE_MODE else 1)} reached"}
 
     p_in, p_out, p_cache = PRICES.get(MODEL, (0, 0, 0))
     cost = (usage["input"] * p_in + usage["output"] * p_out + usage["cache_read"] * p_cache
             + usage["cache_write"] * p_in * 1.25) / 1e6
-    trace = {"model": MODEL, "seconds": round(time.monotonic() - started, 1), "tool_calls": len(steps),
+    trace = {"model": MODEL, "code_mode": CODE_MODE, "seconds": round(time.monotonic() - started, 1), "tool_calls": len(steps),
              "usage": usage, "cost_usd": round(cost, 4), "steps": steps}
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "report.json").write_text(json.dumps(report, indent=2))
