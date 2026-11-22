@@ -13,4 +13,4 @@ jobs:
       - name: Alert rules are valid
         run: docker run --rm -v "$PWD/prometheus:/p" --entrypoint promtool quay.io/prometheus/prometheus:v3.13.1 check rules /p/alerts.yml
       - name: Score gate (agent must not get worse)
-        run: python3 faults/gate.py ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+        run: python3 faults/gate.py

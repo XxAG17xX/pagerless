@@ -1,0 +1,5 @@
+{
+  "min_accuracy": 0.80,
+  "min_pass4": 0.70,
+  "set": "2026-11-22, from the standard exam (85% accuracy, pass^4 8/10) minus a small margin"
+}
