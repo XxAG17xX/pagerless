@@ -25,6 +25,24 @@ services:
         limits:
           cpus: "0.5"
 
+  # The Shop gives these Go services a 20 MiB memory cap and GOMEMLIMIT=16MiB. Under the load
+  # generator they spent their time garbage-collecting (product-catalog at 227% CPU on 12.5 MiB,
+  # checkout at 300%), pushed p95 to 15 s and tripped ServiceSlow with no fault injected.
+  product-catalog:
+    environment:
+      - GOMEMLIMIT=48MiB
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+  checkout:
+    environment:
+      - GOMEMLIMIT=48MiB
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
   # Pagerless's own database (not the Shop's): LangGraph checkpoints and, later, incident memory
   # (pgvector). Host port 5433 so it never clashes with a local Postgres.
   pagerless-db:
