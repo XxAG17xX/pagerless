@@ -21,6 +21,8 @@ MAX_STEPS = 15  # ponytail: hard step cap; a task budget is the upgrade if runs 
 PRICES = {"claude-sonnet-5-5": (2.00, 10.00, 0.10), "claude-haiku-5-5": (0.10, 0.50, 0.01),
           "claude-opus-5-5": (4.00, 20.00, 0.20)}  # $ per 1M tokens: input, output, cache read
 SERVERS = ["mcp_servers/prometheus_mcp.py", "mcp_servers/jaeger_mcp.py", "mcp_servers/logs_mcp.py"]
+if os.environ.get("PAGERLESS_MEMORY") == "1":  # incident memory (RAG) is opt-in, so its effect can be measured
+    SERVERS.append("mcp_servers/memory_mcp.py")
 
 SYSTEM = """You are the on-call SRE for the Astronomy Shop, a microservice web shop (frontend,
 checkout, cart, payment, shipping, quote, currency, email, product-catalog, recommendation, ad,
@@ -56,7 +58,7 @@ async def investigate(run_dir: Path) -> dict:
     steps, usage = [], {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0}
     started = time.monotonic()
     async with AsyncExitStack() as stack:  # closes the servers in reverse order, as anyio requires
-        sessions = [await stack.enter_async_context(Client(StdioServerParameters(command="uv", args=["run", s])))
+        sessions = [await stack.enter_async_context(Client(StdioServerParameters(command="uv", args=["run", s], env=dict(os.environ))))
                     for s in SERVERS]
         owner, tools = {}, []
         for s in sessions:

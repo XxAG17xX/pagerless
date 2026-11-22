@@ -10,3 +10,4 @@ docs/adr/0003-thin-slice-first.md
 skills-lock.json
 .vscode/
 runs/
+.cache/

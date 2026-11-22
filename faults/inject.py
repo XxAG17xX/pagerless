@@ -10,6 +10,7 @@ score.json says whether each attempt named the true root-cause service.
 import argparse
 import asyncio
 import json
+import os
 import subprocess
 import sys
 import time
@@ -124,8 +125,10 @@ def run_agent(run_dir: Path, truth: dict, repeats: int) -> None:
                          "correct": answer.strip().lower() == truth["root_cause_service"].lower(),
                          **{k: out.get(k) for k in ("seconds", "tool_calls", "cost_usd")}})
         print(f"attempt {i}: {answer or out['report']} ({'right' if attempts[-1]['correct'] else 'wrong'})")
+    memory = "off" if os.environ.get("PAGERLESS_MEMORY") != "1" else (
+        "holdout" if os.environ.get("PAGERLESS_MEMORY_EXCLUDE_FAULT") else "seen")
     score = {"fault": truth["fault"], "truth": truth["root_cause_service"], "attempts": attempts,
-             "pass_all": all(a["correct"] for a in attempts), "baseline": truth.get("baseline")}
+             "pass_all": all(a["correct"] for a in attempts), "baseline": truth.get("baseline"), "memory": memory}
     (run_dir / "score.json").write_text(json.dumps(score, indent=2))
 
 
@@ -168,5 +171,11 @@ if __name__ == "__main__":
     parser.add_argument("fault", nargs="?", default="payment-down", choices=FAULTS)
     parser.add_argument("--agent", action="store_true", help="run agent/investigate.py while the fault is live")
     parser.add_argument("--repeats", type=int, default=1, help="agent attempts per fault (default 1)")
+    parser.add_argument("--memory", choices=["off", "seen", "holdout"], default="off",
+                        help="incident memory: off, on with every past incident, or on with this fault type hidden")
     args = parser.parse_args()
+    if args.memory != "off":
+        os.environ["PAGERLESS_MEMORY"] = "1"
+    if args.memory == "holdout":  # the agent must solve a fault type it has never seen in memory
+        os.environ["PAGERLESS_MEMORY_EXCLUDE_FAULT"] = args.fault
     main(args.fault, args.agent, args.repeats)
