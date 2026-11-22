@@ -81,8 +81,10 @@ FAULTS = {
     },
     "payment-failure": flag_fault("paymentFailure", "100%", "payment",
                                   "Turn off the paymentFailure flag: payment rejects every charge."),
-    "cart-failure": flag_fault("cartFailure", "100%", "cart",
-                               "Turn off the cartFailure flag: cart fails every EmptyCart call."),
+    "cart-failure": {**flag_fault("cartFailure", "100%", "cart",
+                                  "Turn off the cartFailure flag: cart fails every EmptyCart call."),
+                     # Seen 2026-11-22: EmptyCart stayed at 15 s after the flag went off, until cart restarted.
+                     "fix": [lambda: set_flag("cartFailure", "off"), ["docker", "restart", "cart"]]},
     "product-catalog-failure": flag_fault("productCatalogFailure", "on", "product-catalog",
                                           "Turn off the productCatalogFailure flag: product OLJCESPC7Z errors."),
     "currency-down": {
