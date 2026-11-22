@@ -43,6 +43,13 @@ services:
         limits:
           memory: 64M
 
+  # The Shop's Postgres has an 80 MiB cap. On 2026-11-22 it was OOM-killed at 07:12 (backends
+  # killed with signal 9, then crash recovery), which broke product-catalog with no fault injected.
+  astronomy-db:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
   # Pagerless's own database (not the Shop's): LangGraph checkpoints and, later, incident memory
   # (pgvector). Host port 5433 so it never clashes with a local Postgres.
   pagerless-db:
