@@ -66,10 +66,11 @@ REPORT_SCHEMA = {
 
 
 async def investigate(run_dir: Path) -> dict:
-    client = anthropic.AsyncAnthropic()
     steps, usage = [], {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0}
     started = time.monotonic()
     async with AsyncExitStack() as stack:  # closes the servers in reverse order, as anyio requires
+        # Closed with the stack, inside the event loop; leaving it open printed "Event loop is closed" tracebacks.
+        client = await stack.enter_async_context(anthropic.AsyncAnthropic())
         sessions = [await stack.enter_async_context(Client(StdioServerParameters(command="uv", args=["run", s], env=dict(os.environ))))
                     for s in SERVERS]
         owner, tools = {}, []
