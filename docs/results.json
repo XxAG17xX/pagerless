@@ -1,7 +1,7 @@
 {
   "model": "claude-sonnet-5-5",
   "modes": {
-    "off": {
+    "standard": {
       "incidents": 8,
       "fault_types": 7,
       "attempts": 32,
@@ -14,7 +14,10 @@
       "median_tool_calls": 9.0,
       "median_cost_usd": 0.03895,
       "total_cost_usd": 1.53,
-      "cost_without_caching_usd": 3.54
+      "cost_without_caching_usd": 3.54,
+      "median_input_tokens": 31217.5,
+      "hijacked": 0,
+      "command_repeated": 0
     }
   }
 }

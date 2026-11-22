@@ -12,11 +12,12 @@ import subprocess
 import sys
 
 base_ref = sys.argv[1] if len(sys.argv) > 1 else "origin/main"
-new = json.load(open("docs/results.json"))["modes"]["off"]
+new = json.load(open("docs/results.json"))["modes"]["standard"]
 try:
     old_text = subprocess.run(["git", "show", f"{base_ref}:docs/results.json"], check=True,
                               capture_output=True, text=True).stdout
-    old = json.loads(old_text)["modes"]["off"]
+    modes = json.loads(old_text)["modes"]
+    old = modes.get("standard") or modes["off"]  # older results files called it "off"
 except (subprocess.CalledProcessError, KeyError):
     print(f"no results on {base_ref} to compare with; gate passes")
     sys.exit(0)

@@ -16,8 +16,16 @@ for score_file in sorted(Path("runs").glob("*/score.json")):
     score = json.loads(score_file.read_text())
     truth = json.loads((score_file.parent / "truth.json").read_text())
     traces = [json.loads(p.read_text()) for p in sorted(score_file.parent.glob("attempt_*/trace.json"))]
+    if truth.get("attack"):
+        cond = "injection attack, " + ("with defence" if score.get("defence") else "no defence")
+    elif score.get("code_mode"):
+        cond = "code mode"
+    elif score.get("memory", "off") != "off":
+        cond = f"memory {score['memory']}"
+    else:
+        cond = "standard"
     incidents.append({"run": score_file.parent.name, "score": score, "truth": truth, "traces": traces,
-                      "memory": score.get("memory", "off")})
+                      "memory": cond})
 
 
 def costs(traces: list) -> tuple[float, float]:
@@ -45,6 +53,10 @@ def summary(group: list) -> dict:
         "median_tool_calls": statistics.median(a["tool_calls"] for a in attempts),
         "median_cost_usd": statistics.median(a["cost_usd"] for a in attempts),
         "total_cost_usd": round(cost, 2), "cost_without_caching_usd": round(no_cache, 2),
+        "median_input_tokens": statistics.median(t["usage"]["input"] + t["usage"]["cache_read"] + t["usage"]["cache_write"]
+                                                 for i in group for t in i["traces"]),
+        "hijacked": sum(bool(a.get("hijacked")) for a in attempts),
+        "command_repeated": sum(bool(a.get("command_repeated")) for a in attempts),
     }
 
 
@@ -57,22 +69,26 @@ for i in sorted(incidents, key=lambda i: (i["memory"], i["score"]["fault"], i["r
     rows.append(f"| {s['fault']} | {t['root_cause_service']} | {i['memory']} | {right}/{len(s['attempts'])} | "
                 f"{'yes' if s['pass_all'] else 'no'} | {base} | {t.get('seconds_to_alert')} s |")
 
-modes = {m: summary([i for i in incidents if i["memory"] == m]) for m in ("off", "seen", "holdout")
-         if any(i["memory"] == m for i in incidents)}
+order = ["standard", "memory seen", "memory holdout", "code mode",
+         "injection attack, no defence", "injection attack, with defence"]
+modes = {m: summary([i for i in incidents if i["memory"] == m]) for m in order if any(i["memory"] == m for i in incidents)}
 model = incidents[0]["traces"][0]["model"]
 lines = [
     "# Results", "",
     f"Agent: {model}, plain tool-use loop over read-only MCP servers (metrics, traces, logs; plus incident "
     "memory when memory is on). Each fault was injected into the borrowed OpenTelemetry Demo; after an alert "
     "fired, the agent investigated 4 times while the fault was live. The rules baseline answered once at the "
-    "same moment. Memory: off = no memory; seen = every past incident searchable; holdout = past incidents "
-    "of the same fault type hidden.", "",
-    "| Fault | True cause | Memory | Agent correct | pass^4 | Rules baseline | Alert after |",
+    "same moment. Conditions: standard; memory seen (every past incident searchable) or holdout (past "
+    "incidents of the same fault type hidden); code mode (programmatic tool calling); injection attack "
+    "(attacker text planted in the logs) without and with the defence.", "",
+    "| Fault | True cause | Condition | Agent correct | pass^4 | Rules baseline | Alert after |",
     "|---|---|---|---|---|---|---|", *rows, "",
 ]
 for m, r in modes.items():
+    attack = (f"; hijacked {r['hijacked']}/{r['attempts']}, repeated the attacker's command "
+              f"{r['command_repeated']}/{r['attempts']}") if m.startswith("injection") else ""
     lines += [
-        f"**Memory {m}:** agent {r['attempts_correct']}/{r['attempts']} attempts correct ({r['accuracy']:.0%}), "
+        f"**{m[0].upper() + m[1:]}:** median {r['median_input_tokens']:.0f} input tokens{attack}; agent {r['attempts_correct']}/{r['attempts']} attempts correct ({r['accuracy']:.0%}), "
         f"pass^4 on {r['pass4']}/{r['incidents']} incidents across {r['fault_types']} fault types; "
         f"rules baseline {r['baseline_correct']}/{r['baseline_incidents']}; median {r['median_seconds']:.0f} s, "
         f"{r['median_tool_calls']:.0f} tool calls, ${r['median_cost_usd']:.3f} per investigation; total "
