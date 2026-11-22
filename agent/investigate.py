@@ -108,6 +108,7 @@ async def investigate(run_dir: Path) -> dict:
             if response.stop_reason != "tool_use" or not calls:
                 text = next((b.text for b in response.content if b.type == "text"), "{}")
                 report = json.loads(text) if response.stop_reason == "end_turn" else {"error": response.stop_reason}
+                stop = response.stop_reason
                 break
             results = []
             for call in calls:
@@ -118,12 +119,13 @@ async def investigate(run_dir: Path) -> dict:
                 results.append({"type": "tool_result", "tool_use_id": call.id, "content": out, "is_error": bool(res.is_error)})
             messages.append({"role": "user", "content": results})
         else:
+            stop = "cap"
             report = {"error": f"request cap of {MAX_STEPS * (4 if CODE_MODE else 1)} reached"}
 
     p_in, p_out, p_cache = PRICES.get(MODEL, (0, 0, 0))
     cost = (usage["input"] * p_in + usage["output"] * p_out + usage["cache_read"] * p_cache
             + usage["cache_write"] * p_in * 1.25) / 1e6
-    trace = {"model": MODEL, "code_mode": CODE_MODE, "seconds": round(time.monotonic() - started, 1), "tool_calls": len(steps),
+    trace = {"model": MODEL, "code_mode": CODE_MODE, "stop_reason": stop, "seconds": round(time.monotonic() - started, 1), "tool_calls": len(steps),
              "usage": usage, "cost_usd": round(cost, 4), "steps": steps}
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "report.json").write_text(json.dumps(report, indent=2))
