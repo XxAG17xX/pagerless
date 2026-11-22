@@ -20,6 +20,16 @@ MAX_MSG = 300  # characters kept from each message
 # OpenTelemetry severity numbers: each level's lowest value.
 LEVELS = {"debug": 5, "info": 9, "warn": 13, "error": 17, "fatal": 21}
 
+# Injection defence (PAGERLESS_DEFENCE=1): log text can be written by an attacker, so it is fenced as
+# untrusted data; any copy of the fence inside the text is removed so it cannot close the fence early.
+DEFENCE = os.environ.get("PAGERLESS_DEFENCE") == "1"
+
+
+def fence(text: str) -> str:
+    text = text.replace("<<untrusted>>", "").replace("<</untrusted>>", "")
+    return f"<<untrusted>>{text}<</untrusted>>" if DEFENCE else text
+
+
 mcp = MCPServer("logs_mcp")
 READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False)
 
@@ -65,11 +75,11 @@ def search(service: str | None = None, contains: str | None = None, severity: st
             "time": src.get("@timestamp"),
             "service": src.get("resource", {}).get("service.name"),
             "severity": src.get("severity", {}).get("text"),
-            "message": str(src.get("body", "")).strip()[:MAX_MSG],
+            "message": fence(str(src.get("body", "")).strip()[:MAX_MSG]),
             "trace_id": src.get("traceId"),
         }
         if exc := src.get("attributes", {}).get("exception.message"):
-            row["exception"] = str(exc)[:MAX_MSG]
+            row["exception"] = fence(str(exc)[:MAX_MSG])
         out.append(row)
     return json.dumps(out)
 
