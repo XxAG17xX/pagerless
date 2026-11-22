@@ -1,0 +1,20 @@
+{
+  "model": "claude-sonnet-5-5",
+  "modes": {
+    "off": {
+      "incidents": 8,
+      "fault_types": 7,
+      "attempts": 32,
+      "attempts_correct": 30,
+      "accuracy": 0.9375,
+      "pass4": 7,
+      "baseline_incidents": 7,
+      "baseline_correct": 1,
+      "median_seconds": 32.7,
+      "median_tool_calls": 9.0,
+      "median_cost_usd": 0.03895,
+      "total_cost_usd": 1.53,
+      "cost_without_caching_usd": 3.54
+    }
+  }
+}
