@@ -49,15 +49,16 @@ def summary(group: list) -> dict:
         "accuracy": round(sum(a["correct"] for a in attempts) / len(attempts), 4),
         "pass4": sum(i["score"]["pass_all"] for i in group),
         "baseline_incidents": len(based), "baseline_correct": sum(b["correct"] for b in based),
-        "median_seconds": statistics.median(a["seconds"] for a in attempts),
-        "median_tool_calls": statistics.median(a["tool_calls"] for a in attempts),
-        "median_cost_usd": statistics.median(a["cost_usd"] for a in attempts),
+        "median_seconds": statistics.median(a["seconds"] for a in attempts if a.get("seconds") is not None),  # crashed attempts have none
+        "median_tool_calls": statistics.median(a["tool_calls"] for a in attempts if a.get("tool_calls") is not None),  # crashed attempts have none
+        "median_cost_usd": statistics.median(a["cost_usd"] for a in attempts if a.get("cost_usd") is not None),  # crashed attempts have none
         "total_cost_usd": round(cost, 2), "cost_without_caching_usd": round(no_cache, 2),
         "median_input_tokens": statistics.median(t["usage"]["input"] + t["usage"]["cache_read"] + t["usage"]["cache_write"]
                                                  for i in group for t in i["traces"]),
         "hijacked": sum(bool(a.get("hijacked")) for a in attempts),
         "command_repeated": sum(bool(a.get("command_repeated")) for a in attempts),
-        "gave_up": sum(not a.get("answer") for a in attempts),  # no cause named at all
+        "gave_up": sum(not a.get("answer") for a in attempts),  # no cause named at all (includes crashes)
+        "crashed": sum(a.get("seconds") is None for a in attempts),
         "flagged_attack": sum(bool(a.get("flagged_attack")) for a in attempts),
     }
 
