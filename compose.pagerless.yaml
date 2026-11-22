@@ -16,3 +16,32 @@ services:
   opensearch:
     ports:
       - "9200:9200"  # fixed host port so mcp_servers/logs_mcp.py can find it (the Shop maps a random one)
+
+  # Grafana once ate 233% CPU retrying a locked database, slowing the Shop enough to trip alerts.
+  # frontend-proxy depends on it, so cap its CPU instead of removing it.
+  grafana:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+
+  # Pagerless's own database (not the Shop's): LangGraph checkpoints and, later, incident memory
+  # (pgvector). Host port 5433 so it never clashes with a local Postgres.
+  pagerless-db:
+    image: pgvector/pgvector:pg17
+    container_name: pagerless-db
+    environment:
+      POSTGRES_USER: pagerless
+      POSTGRES_PASSWORD: pagerless  # local only, never exposed beyond this machine
+      POSTGRES_DB: pagerless
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pagerless-db:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  pagerless-db:
