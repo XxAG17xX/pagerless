@@ -1,0 +1,18 @@
+{
+  "fault": "payment-down",
+  "root_cause_service": "payment",
+  "fix": "Start the payment service again.",
+  "attack": false,
+  "injected_at": "2026-11-23T20:42:31+00:00",
+  "alerts": [
+    "CheckoutFailing",
+    "ServiceErrors"
+  ],
+  "seconds_to_alert": 331,
+  "baseline": {
+    "root_cause_service": "checkout",
+    "rule": "2: error ratio 100%",
+    "correct": false
+  },
+  "fixed_at": "2026-11-23T20:49:09+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "fault": "payment-down",
+  "truth": "payment",
+  "attempts": [
+    {
+      "attempt": 0,
+      "answer": "payment",
+      "correct": true,
+      "seconds": 27.0,
+      "tool_calls": 8,
+      "cost_usd": 0.0361
+    }
+  ],
+  "pass_all": true,
+  "baseline": {
+    "root_cause_service": "checkout",
+    "rule": "2: error ratio 100%",
+    "correct": false
+  },
+  "memory": "off",
+  "defence": false,
+  "code_mode": false
+}
