@@ -1,3 +1,7 @@
+
+
+
+
 # Pagerless
 
 An on-call agent for microservices. When an alert fires, it investigates metrics, traces and logs
@@ -7,9 +11,7 @@ approval.
 Evaluated on the [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/), a 20-service shop:
 8 fault types are injected, and each diagnosis is scored against the injected fault.
 
-[![Incident 2026-11-23: payment stops, CheckoutFailing fires, the agent names payment in 27 s](docs/media/pagerless-demo.gif)](docs/media/pagerless-demo.mp4)
-
-*Incident 2026-11-23, payment-down, rendered from its run files with Remotion (`video/`). [Full video, 51 s](docs/media/pagerless-demo.mp4).*
+https://github.com/user-attachments/assets/c38edf86-c685-4959-af80-af7299cd4db2
 
 ## Results
 
