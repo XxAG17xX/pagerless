@@ -1,14 +1,15 @@
 # Pagerless
 
-An AI on-call engineer: when an alert fires, it investigates metrics, traces and logs through its own
-MCP servers, writes a root-cause report that cites its evidence, and waits for a human to approve any fix.
+An on-call agent for microservices. When an alert fires, it investigates metrics, traces and logs
+through its own MCP servers and writes a root-cause report that cites its evidence. Any fix waits for
+approval.
 
-It is tested on the [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/), a borrowed 20-service
-shop, by breaking it on purpose so every diagnosis is scored against a known answer.
+Evaluated on the [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/), a 20-service shop:
+8 fault types are injected, and each diagnosis is scored against the injected fault.
 
-[![One real incident: payment is stopped, the alert fires, the agent finds the cause in 27 s](docs/media/pagerless-demo.gif)](docs/media/pagerless-demo.mp4)
+[![Incident 2026-11-23: payment stops, CheckoutFailing fires, the agent names payment in 27 s](docs/media/pagerless-demo.gif)](docs/media/pagerless-demo.mp4)
 
-*One real incident, replayed from its run files (`video/`, made with Remotion). [Full video, 64 s](docs/media/pagerless-demo.mp4).*
+*Incident 2026-11-23, payment-down, rendered from its run files with Remotion (`video/`). [Full video, 51 s](docs/media/pagerless-demo.mp4).*
 
 ## Results
 
@@ -34,7 +35,7 @@ Prompt caching cut the cost of the standard runs by 57%, computed from the measu
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/architecture-dark.svg">
-  <img alt="Architecture: the fault harness breaks the borrowed shop; Prometheus, Jaeger and OpenSearch feed read-only MCP servers; the agent writes a cited report, a human approves any fix, and the result is scored against the hidden answer key" src="docs/media/architecture-light.svg" width="100%">
+  <img alt="Architecture: the fault harness injects faults into the OpenTelemetry Demo; Prometheus, Jaeger and OpenSearch feed read-only MCP servers; the agent writes a cited report, a human approves any fix, and the result is scored against the injected fault" src="docs/media/architecture-light.svg" width="100%">
 </picture>
 
 - **Agent:** `agent/investigate.py` (a plain tool-use loop) and `agent/graph.py` (LangGraph, every step
@@ -63,7 +64,7 @@ uv run --env-file .env faults/inject.py payment-down --agent     # break it, inv
   turn (API 400); it is counted as a failure.
 - **Incident memory gave no clear gain** on fault types it had not seen (88% vs 85%, within noise
   at these sample sizes).
-- **The borrowed shop's own memory limits broke it with no fault injected:** product-catalog and
+- **The OpenTelemetry Demo's own memory limits broke it with no fault injected:** product-catalog and
   checkout (20 MiB) and its Postgres (80 MiB) stalled or were OOM-killed. Raised in
   `compose.pagerless.yaml`, our layer on top; the shop's files are never edited.
 - **Small numbers:** 4 attempts per incident and 1 to 3 incidents per fault type. Treat the

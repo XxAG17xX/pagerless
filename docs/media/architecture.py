@@ -35,11 +35,11 @@ def arrow(t, d, label="", lx=0, ly=0, dashed=False, anchor="start"):
 
 def render(t):
     p = []
-    # column 1: the system under test (borrowed shop + my harness and alerts)
-    p.append(box(t, 24, 64, 236, 78, "Fault harness", "faults/inject.py: breaks the shop\nand keeps the answer key"))
-    p.append(box(t, 24, 186, 236, 70, "OpenTelemetry Demo", "borrowed: 20 services in Docker", fill=t["borrowed"], dashed=True))
+    # column 1: the system under test, the harness and the alerts
+    p.append(box(t, 24, 64, 236, 78, "Fault harness", "faults/inject.py: injects faults,\nrecords the ground truth"))
+    p.append(box(t, 24, 186, 236, 70, "OpenTelemetry Demo", "20 services in Docker", fill=t["borrowed"], dashed=True))
     p.append(box(t, 24, 300, 236, 78, "Prometheus, Jaeger, OpenSearch", "metrics, traces, logs,\nplus my alert rules", title_size=14))
-    p.append(arrow(t, "M142,142 V180", "breaks it on purpose", 152, 166))
+    p.append(arrow(t, "M142,142 V180", "injects a fault", 152, 166))
     p.append(arrow(t, "M142,256 V294", "telemetry", 152, 280))
     # column 2: MCP servers
     p.append(f'<text x="300" y="138" font-size="12" font-weight="600" letter-spacing="0.06em" fill="{t["text2"]}">MCP SERVERS, READ-ONLY</text>')
@@ -55,16 +55,16 @@ def render(t):
                  fill=t["accent_box"], stroke=t["accent"]))
     p.append(f'<path d="M506,243 H550" fill="none" stroke="{t["text2"]}" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow-back)"/>')
     p.append(f'<text x="528" y="234" font-size="12" fill="{t["text2"]}" text-anchor="middle">MCP</text>')
-    p.append(arrow(t, "M260,360 H278 V420 H663 V324", "my alert fires: investigation starts", 300, 413))
+    p.append(arrow(t, "M260,360 H278 V420 H663 V324", "an alert fires: investigation starts", 300, 413))
     # column 4: outputs
     p.append(box(t, 810, 92, 150, 64, "Cited report", "root cause + evidence", title_size=14))
     p.append(box(t, 810, 196, 150, 64, "Human approves", "any fix, or not", title_size=14))
-    p.append(box(t, 810, 300, 150, 78, "Score", "vs the answer key;\nCI fails below a floor", title_size=14))
+    p.append(box(t, 810, 300, 150, 78, "Score", "vs ground truth;\nCI fails below a floor", title_size=14))
     p.append(arrow(t, "M770,200 H790 V124 H804"))
     p.append(arrow(t, "M885,156 V190"))
     p.append(arrow(t, "M770,290 H790 V339 H804"))
-    # the answer key travels around the agent, never through it
-    p.append(arrow(t, "M142,64 V40 H970 V339 H966", "answer key, hidden from the agent", 560, 33, dashed=True, anchor="middle"))
+    # the ground truth goes around the agent, never through it
+    p.append(arrow(t, "M142,64 V40 H970 V339 H966", "ground truth, not visible to the agent", 560, 33, dashed=True, anchor="middle"))
     defs = (f'<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
             f'<path d="M0,0 L10,5 L0,10 z" fill="{t["text2"]}"/></marker>'
             f'<marker id="arrow-back" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto">'
