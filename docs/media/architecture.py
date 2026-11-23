@@ -38,7 +38,7 @@ def render(t):
     # column 1: the system under test, the harness and the alerts
     p.append(box(t, 24, 64, 236, 78, "Fault harness", "faults/inject.py: injects faults,\nrecords the ground truth"))
     p.append(box(t, 24, 186, 236, 70, "OpenTelemetry Demo", "20 services in Docker", fill=t["borrowed"], dashed=True))
-    p.append(box(t, 24, 300, 236, 78, "Prometheus, Jaeger, OpenSearch", "metrics, traces, logs,\nplus my alert rules", title_size=14))
+    p.append(box(t, 24, 300, 236, 78, "Prometheus, Jaeger, OpenSearch", "metrics, traces, logs,\nplus the alert rules", title_size=14))
     p.append(arrow(t, "M142,142 V180", "injects a fault", 152, 166))
     p.append(arrow(t, "M142,256 V294", "telemetry", 152, 280))
     # column 2: MCP servers
