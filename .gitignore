@@ -8,6 +8,7 @@ docs/plan.md
 docs/adr/0003-thin-slice-first.md
 .claude/
 skills-lock.json
+LEARNING.md
 .vscode/
 runs/
 .cache/

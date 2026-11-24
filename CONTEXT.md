@@ -1,13 +1,13 @@
 # Pagerless
 
-An AI on-call engineer that investigates alerts on a borrowed microservice system and writes a
-root-cause report citing its evidence.
+An on-call agent that investigates alerts on a microservice system and writes a root-cause report
+citing its evidence.
 
 ## Language
 
 **Shop**:
-The OpenTelemetry Demo (Astronomy Shop): the borrowed microservice system Pagerless is tested on.
-Not built by us.
+The OpenTelemetry Demo (Astronomy Shop), the microservice system Pagerless is evaluated on.
+Maintained by the OpenTelemetry project.
 _Avoid_: patient, demo, Astronomy Shop, OTel Demo
 
 **Alert**:
