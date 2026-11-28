@@ -69,3 +69,4 @@ uv run --env-file .env faults/inject.py payment-down --agent     # break it, inv
   percentages as a first measurement, not a benchmark.
 
 Built with Claude Code.
+[![M8ven Score](https://m8ven.ai/badge/mcp/xxag17xx-pagerless-448sef?v=253cfdb22124b865dd75b2332d5f4585)](https://m8ven.ai/mcp/xxag17xx-pagerless-448sef?s=readme)
